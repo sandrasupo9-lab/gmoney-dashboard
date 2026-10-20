@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<title>G Money Seguimiento Comercial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<style>
+  /* Diseño: tablero gerencial de G Money, un solo tema claro con azul vivo como color principal.
+     Playfair Display (serif ejecutiva) para títulos y cifras, Manrope para la interfaz. */
+  :root {
+    color-scheme: light;
+    --font-sans: "Manrope", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
+    --bg: #eef2f9; --panel: #ffffff; --fg: #0f172a; --fg-muted: #526078; --line: #d9e1ef;
+    --ok: #0b7a2b; --warn: #a9640a; --bad: #c22f2f;
+    --grid: #e7edf7; --axis: #c9d4e6; --ref: #9fb0cc; --muted-mark: #b7c2d6;
+    --popover: #ffffff; --shadow: 0 8px 24px rgba(11, 42, 111, .18);
+    --blue: #0b2a6f; --blue-2: #1d4ed8; --cyan: #2f6fe0; --navy: #0b2a6f;
+    --c0: #1d4ed8; --c1: #eb6834; --c2: #eda100; --c3: #1baf7a; --c4: #6250d6; --c5: #e34948; --c6: #e87ba4; --c7: #008300;
+    --radius: 14px; --pad-xs: 4px; --pad-sm: 8px; --pad-md: 12px; --pad-lg: 18px; --pad-xl: 24px;
+    --gap-xs: 4px; --gap-sm: 8px; --gap-md: 14px; --gap-lg: 22px; --gap-xl: 32px;
+    --fs-caption: 12.5px; --fs-body: 14.5px; --fs-heading: 16px; --fs-title: 24px;
+  }
+  html { background: var(--bg); }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); font-size: var(--fs-body); line-height: 1.4; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px 32px; margin: 0; }
+  .gm-wrap { width: 100%; }
+  .dash-skeleton { }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--blue-2); outline-offset: 2px; }
+</style>
+<style>
+  /* Tokens de la página: --gm-c0..c7 se asignan desde dash.colors en el script; semánticos del tema */
+  .gm { font-family: var(--font-sans); color: var(--fg); display: grid; gap: var(--gap-lg); font-variant-numeric: tabular-nums; --gm-c0: var(--fg); --gm-c1: var(--fg); --gm-c2: var(--fg-muted); --gm-c3: var(--ok); --gm-c4: var(--warn); --gm-c5: var(--bad); --gm-c6: var(--fg-muted); --gm-c7: var(--fg-muted); }
+  .gm * { box-sizing: border-box; min-width: 0; }
+  .gm [hidden] { display: none !important; }
+  .gm-body { display: grid; gap: var(--gap-lg); }
+
+  /* Cabecera */
+  .gm-head { position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--gap-md) var(--gap-lg); padding: var(--pad-lg) var(--pad-xl); border-radius: var(--radius); border: 1px solid var(--line); background: linear-gradient(120deg, color-mix(in srgb, var(--gm-c0) 16%, var(--panel)) 0%, color-mix(in srgb, var(--gm-c3) 14%, var(--panel)) 55%, color-mix(in srgb, var(--gm-c1) 12%, var(--panel)) 100%); }
+  .gm-head::after { content: ""; position: absolute; right: -60px; top: -80px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--gm-c3) 22%, transparent) 0%, transparent 70%); pointer-events: none; }
+  .gm-head .eyebrow { font-size: var(--fs-caption); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-muted); margin: 0 0 4px; }
+  .gm-head h1 { font-family: var(--font-serif); font-weight: 400; font-size: calc(var(--fs-title) * 1.25); margin: 0; text-wrap: balance; line-height: 1.15; }
+  .gm-head p { margin: 6px 0 0; color: var(--fg); font-size: var(--fs-body); max-width: 64ch; }
+  .gm-search { position: relative; z-index: 1; display: grid; gap: 4px; flex: 1 1 18rem; max-width: 26rem; }
+  .gm-search label { font-size: var(--fs-caption); color: var(--fg-muted); }
+  .gm-search .box { display: flex; gap: 6px; }
+  .gm-search input { font: inherit; font-size: var(--fs-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; flex: 1 1 auto; }
+  .gm-search input:focus { outline: 2px solid var(--gm-c0); outline-offset: 1px; }
+  .gm-search .stamp { font-size: var(--fs-caption); color: var(--fg-muted); }
+  .gm-btn { font: inherit; font-size: var(--fs-caption); font-weight: 600; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; cursor: pointer; white-space: nowrap; }
+  .gm-btn:hover { background: color-mix(in srgb, var(--gm-c0) 10%, var(--bg)); }
+  .gm-btn.primary { background: var(--gm-c0); color: var(--bg); border-color: transparent; }
+  .gm-btn.primary:hover { filter: brightness(1.08); }
+  .gm-btn:focus-visible { outline: 2px solid var(--gm-c0); outline-offset: 2px; }
+
+  /* Filtros */
+  .gm-filters { display: flex; flex-wrap: wrap; gap: var(--gap-sm); align-items: end; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--pad-md); }
+  .gm-filters label { display: grid; gap: 2px; font-size: var(--fs-caption); color: var(--fg-muted); flex: 1 1 9rem; }
+  .gm-filters select { font: inherit; font-size: var(--fs-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 8px; width: 100%; }
+  .gm-count { font-size: var(--fs-caption); color: var(--fg-muted); align-self: center; flex: 1 1 100%; }
+
+  /* KPIs */
+  .gm-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr)); gap: var(--gap-md); }
+  .gm-tile { --tc: var(--gm-c0); position: relative; overflow: hidden; background: linear-gradient(180deg, color-mix(in srgb, var(--tc) 12%, var(--panel)), var(--panel) 70%); border: 1px solid var(--line); border-top: 3px solid var(--tc); border-radius: var(--radius); padding: var(--pad-md) var(--pad-lg); display: grid; gap: 4px; align-content: start; }
+  .gm-tile .k { font-size: var(--fs-caption); color: var(--fg-muted); letter-spacing: .02em; }
+  .gm-tile .v { font-family: var(--font-serif); font-weight: 400; font-size: 2.4rem; line-height: 1.05; color: var(--tc); }
+  .gm-tile .s { font-size: var(--fs-caption); color: var(--fg-muted); }
+
+  /* Secciones y tarjetas */
+  .gm-section h2 { display: flex; align-items: center; gap: 8px; font-size: var(--fs-heading); font-weight: 600; margin: 0 0 var(--gap-sm); }
+  .gm-section h2::before { content: ""; width: 10px; height: 10px; border-radius: 3px; background: var(--sc, var(--gm-c0)); }
+  .gm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--gap-md); }
+  .gm-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--pad-lg); display: grid; gap: var(--gap-sm); align-content: start; }
+  .gm-card.wide { grid-column: 1 / -1; }
+  #cartera .gm-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr)); }
+  .gm-card h3 { font-size: var(--fs-heading); font-weight: 600; margin: 0; }
+  .gm-card .note { font-size: var(--fs-caption); color: var(--fg-muted); margin: 0; }
+
+  /* Gráficos */
+  .gm-chart { position: relative; width: 100%; }
+  .gm-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .gm-chart text { font-family: var(--font-sans); font-size: var(--fs-caption); fill: var(--fg-muted); }
+  .gm-chart text.val { fill: var(--fg); }
+  .gm-chart .grid line { stroke: var(--grid); stroke-width: 1; }
+  .gm-chart .hit { fill: transparent; }
+  .gm-chart.h260 { min-height: 260px; }
+  .gm-chart.h220 { min-height: 220px; }
+  .gm-tip { position: absolute; z-index: 5; pointer-events: none; background: var(--popover); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: var(--pad-xs) var(--pad-sm); font-size: var(--fs-caption); color: var(--fg); display: grid; gap: 2px; max-width: 16rem; }
+  .gm-tip .t { color: var(--fg-muted); }
+  .gm-tip .r { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .gm-tip .r b { font-weight: 600; margin-left: auto; }
+  .gm-sw { width: 9px; height: 9px; border-radius: 2px; flex: none; display: inline-block; }
+  .gm-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: var(--fs-caption); color: var(--fg-muted); }
+  .gm-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .gm-empty { font-size: var(--fs-caption); color: var(--fg-muted); display: flex; align-items: center; justify-content: center; }
+  .gm-fail { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--fg-muted); font-size: var(--fs-caption); }
+  .gm-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--bad); }
+
+  /* Tablas */
+  .gm-tools { display: flex; flex-wrap: wrap; gap: var(--gap-sm); align-items: center; }
+  .gm-tools input { font: inherit; font-size: var(--fs-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; flex: 1 1 12rem; }
+  .gm-tbl { max-height: 28rem; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+  .gm-tbl table { border-collapse: collapse; width: 100%; font-size: var(--fs-caption); }
+  .gm-tbl th { position: sticky; top: 0; background: color-mix(in srgb, var(--gm-c0) 7%, var(--panel)); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; font-weight: 600; color: var(--fg-muted); cursor: pointer; user-select: none; }
+  .gm-tbl th[aria-sort="ascending"]::after { content: " ↑"; }
+  .gm-tbl th[aria-sort="descending"]::after { content: " ↓"; }
+  .gm-tbl td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .gm-tbl tbody tr[data-key] { cursor: pointer; }
+  .gm-tbl tbody tr[data-key]:hover td { background: color-mix(in srgb, var(--gm-c0) 8%, transparent); }
+  .gm-tbl td.num { text-align: right; white-space: nowrap; }
+  .gm-tbl td.txt { min-width: 14rem; max-width: 26rem; }
+  .gm-tbl tr:last-child td { border-bottom: 0; }
+  .gm-pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: var(--fs-caption); font-weight: 600; white-space: nowrap; color: var(--pc, var(--fg-muted)); background: color-mix(in srgb, var(--pc, var(--fg-muted)) 14%, transparent); }
+  .gm-pill.bad { --pc: var(--bad); }
+  .gm-pill.warn { --pc: var(--warn); }
+  .gm-pill.ok { --pc: var(--ok); }
+  .gm [data-dash-source-state=empty] { color: transparent; }
+  .gm [data-dash-source-state=refreshing] { opacity: .5; transition: opacity .3s; }
+  .gm-def { font-size: var(--fs-caption); color: var(--fg-muted); margin: 0; }
+
+  /* Ficha de cliente */
+  .fx { --ec: var(--gm-c0); display: grid; gap: var(--gap-md); }
+  .fx-top { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+  .fx-band { padding: var(--pad-lg) var(--pad-xl); background: linear-gradient(120deg, color-mix(in srgb, var(--ec) 22%, var(--panel)), color-mix(in srgb, var(--gm-c0) 10%, var(--panel)) 70%, var(--panel)); display: flex; flex-wrap: wrap; gap: var(--gap-md); align-items: center; justify-content: space-between; }
+  .fx-band h2 { font-family: var(--font-serif); font-weight: 400; font-size: calc(var(--fs-title) * 1.15); margin: 0; line-height: 1.15; text-wrap: balance; }
+  .fx-band .sub { font-size: var(--fs-caption); color: var(--fg-muted); margin: 4px 0 0; }
+  .fx-title { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .fx-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .fx-chip { font: inherit; font-size: var(--fs-caption); padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; }
+  .fx-chip[aria-pressed="true"] { background: var(--gm-c0); color: var(--bg); border-color: transparent; }
+  .fx-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr)); border-top: 1px solid var(--line); }
+  .fx-fact { padding: var(--pad-md) var(--pad-lg); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); display: grid; gap: 3px; }
+  .fx-fact .k { font-size: var(--fs-caption); letter-spacing: .06em; text-transform: uppercase; color: var(--fg-muted); }
+  .fx-fact .v { font-size: var(--fs-body); font-weight: 600; }
+  .fx-fact .v.bad { color: var(--bad); }
+  .fx-fact .v.warn { color: var(--warn); }
+  .fx-fact .v.ok { color: var(--ok); }
+  .fx-stages { padding: var(--pad-lg) var(--pad-xl); }
+  .fx-stages .k { font-size: var(--fs-caption); letter-spacing: .06em; text-transform: uppercase; color: var(--fg-muted); margin: 0 0 var(--gap-md); }
+  .fx-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; position: relative; }
+  .fx-steps::before { content: ""; position: absolute; left: 12.5%; right: 12.5%; top: 16px; height: 3px; background: var(--line); border-radius: 2px; }
+  .fx-steps .bar { position: absolute; left: 12.5%; top: 16px; height: 3px; background: var(--gm-c3); border-radius: 2px; width: 0; }
+  .fx-step { position: relative; display: grid; justify-items: center; gap: 6px; text-align: center; }
+  .fx-step .dot { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--panel); border: 3px solid var(--line); color: var(--fg-muted); font-size: 14px; font-weight: 700; }
+  .fx-step.done .dot { background: var(--gm-c3); border-color: var(--gm-c3); color: var(--bg); }
+  .fx-step.now .dot { border-color: var(--gm-c0); color: var(--gm-c0); box-shadow: 0 0 0 5px color-mix(in srgb, var(--gm-c0) 18%, transparent); }
+  .fx-step .n { font-size: var(--fs-caption); font-weight: 600; }
+  .fx-step .st { font-size: var(--fs-caption); color: var(--fg-muted); }
+  .fx-step.done .st { color: var(--ok); }
+  .fx-step.now .st { color: var(--gm-c0); }
+  .fx-tabs { display: flex; flex-wrap: wrap; gap: 2px; border-bottom: 1px solid var(--line); padding: 0 var(--pad-md); }
+  .fx-tab { font: inherit; font-size: var(--fs-body); color: var(--fg-muted); background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 14px; cursor: pointer; margin-bottom: -1px; }
+  .fx-tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--gm-c0); font-weight: 600; }
+  .fx-tab:focus-visible { outline: 2px solid var(--gm-c0); outline-offset: -2px; }
+  .fx-panel { padding: var(--pad-lg) var(--pad-xl); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--gap-lg); }
+  .fx-panel h4 { font-size: var(--fs-caption); letter-spacing: .06em; text-transform: uppercase; color: var(--fg-muted); margin: 0 0 var(--gap-sm); }
+  .fx-dl { display: grid; grid-template-columns: auto 1fr; gap: 0; margin: 0; }
+  .fx-dl dt { color: var(--fg-muted); padding: 7px 12px 7px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-caption); }
+  .fx-dl dd { margin: 0; padding: 7px 0; border-bottom: 1px solid var(--line); text-align: right; font-size: var(--fs-caption); font-weight: 600; overflow-wrap: anywhere; }
+  .fx-dl dt:last-of-type, .fx-dl dd:last-of-type { border-bottom: 0; }
+  .fx-dl dd.ok { color: var(--ok); } .fx-dl dd.warn { color: var(--warn); } .fx-dl dd.bad { color: var(--bad); }
+  .fx-tl { list-style: none; margin: 0; padding: 0; display: grid; }
+  .fx-tl li { display: grid; grid-template-columns: 5.5rem 1fr; gap: 10px; align-items: start; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-caption); }
+  .fx-tl li:last-child { border-bottom: 0; }
+  .fx-tl .d { color: var(--fg-muted); font-family: var(--font-sans); }
+  .fx-tl .e { display: flex; align-items: center; gap: 8px; }
+  .fx-tl .e::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dc, var(--gm-c0)); flex: none; }
+  .fx-tl .e.future { color: var(--fg-muted); font-style: italic; }
+  .fx-gauge { display: grid; justify-items: center; gap: 2px; }
+  .fx-gauge svg { width: 100%; max-width: 220px; height: auto; display: block; overflow: visible; }
+  .fx-gauge .pct { font-family: var(--font-serif); font-size: 2rem; }
+  .fx-gauge .lbl { font-size: var(--fs-body); font-weight: 600; }
+  .fx-gauge .lbl.bad { color: var(--bad); } .fx-gauge .lbl.warn { color: var(--warn); } .fx-gauge .lbl.ok { color: var(--ok); }
+  .fx-gauge .s { font-size: var(--fs-caption); color: var(--fg-muted); text-align: center; }
+  .fx-text { font-size: var(--fs-body); line-height: 1.5; white-space: pre-line; margin: 0; }
+  .fx-text.muted { color: var(--fg-muted); font-style: italic; }
+  .fx-dep { width: 100%; border-collapse: collapse; font-size: var(--fs-caption); }
+  .fx-dep th { text-align: left; color: var(--fg-muted); font-weight: 600; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+  .fx-dep td { padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  .fx-dep tr:last-child td { border-bottom: 0; }
+  .fx-dep td.area { font-weight: 600; }
+  .fx-dep td.area::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 8px; background: var(--ac); }
+  .fx-nf { padding: var(--pad-xl); text-align: center; color: var(--fg-muted); }
+  @media (max-width: 640px) { .fx-steps { grid-template-columns: repeat(2, 1fr); row-gap: var(--gap-md); } .fx-steps::before, .fx-steps .bar { display: none; } .fx-band, .fx-stages, .fx-panel { padding-inline: var(--pad-lg); } }
+  @media (prefers-reduced-motion: no-preference) { .fx-steps .bar { transition: width .3s ease-out; } }
+</style>
+<style>
+  /* Acentos azules sobre el CSS base de la página */
+  .gm-head { background: var(--navy); border: 0; color: #fff; box-shadow: 0 10px 26px rgba(11, 42, 111, .28); align-items: center; }
+  .gm-head::after { display: none; }
+  .gm-head h1 { color: #fff; font-weight: 500; font-size: calc(var(--fs-title) * 1.35); letter-spacing: .01em; }
+  .gm-head p, .gm-search label, .gm-search .stamp { color: rgba(255, 255, 255, .9); }
+  .gm-search input { background: #fff; color: var(--fg); border: 1px solid transparent; }
+  .gm-search input:focus { outline: 2px solid #fff; }
+  .gm-btn.primary { background: #fff; color: var(--navy); }
+  .gm-btn.primary:hover { background: #e4ebfa; filter: none; }
+  .gm-filters, .gm-card, .gm-tile, .fx-top { box-shadow: 0 2px 10px rgba(11, 42, 111, .07); }
+  .gm-filters select { border-color: #c9d6ee; }
+  .gm-filters select:hover, .gm-tools input:hover { border-color: var(--blue-2); }
+  .gm-tile { background: linear-gradient(180deg, color-mix(in srgb, var(--tc) 14%, #fff), #fff 72%); }
+  .gm-section h2 { color: var(--navy); }
+  .gm-card h3 { color: var(--navy); }
+  .gm-tbl th { background: var(--navy); color: #fff; }
+  .gm-tbl tbody tr[data-key]:hover td { background: #eef2f9; }
+  .fx-band { background: linear-gradient(115deg, color-mix(in srgb, var(--ec) 28%, #fff), color-mix(in srgb, var(--blue-2) 14%, #fff) 60%, #fff); }
+  .fx-band h2 { color: var(--navy); }
+  .fx-tab[aria-selected="true"] { color: var(--blue); border-bottom-color: var(--blue-2); }
+  .fx-chip[aria-pressed="true"], .gm-btn:not(.primary):hover { background: var(--blue-2); color: #fff; border-color: transparent; }
+  .fx-step.now .dot { border-color: var(--blue-2); color: var(--blue); box-shadow: 0 0 0 5px rgba(47, 125, 246, .18); }
+  .fx-step.now .st { color: var(--blue); }
+  .fx-panel h4 { color: var(--navy); letter-spacing: .12em; font-weight: 800; }
+  /* Tipografía ejecutiva */
+  .gm-head h1 { font-weight: 700; letter-spacing: .005em; }
+  .gm-section h2 { font-family: var(--font-serif); font-weight: 600; font-size: 21px; letter-spacing: .005em; }
+  .gm-card h3 { font-weight: 800; font-size: 15.5px; letter-spacing: -.005em; }
+  .gm-card .note { font-weight: 500; }
+  .gm-tile .k { text-transform: uppercase; letter-spacing: .08em; font-size: 11.5px; font-weight: 800; }
+  .gm-tile .v { font-weight: 600; font-size: 2.6rem; }
+  .gm-tile .s { font-weight: 500; }
+  .gm-filters label { text-transform: uppercase; letter-spacing: .06em; font-size: 11px; font-weight: 700; color: var(--navy); }
+  .gm-search label { text-transform: uppercase; letter-spacing: .06em; font-size: 11px; font-weight: 700; }
+  .gm-tbl th { text-transform: uppercase; letter-spacing: .05em; font-size: 11px; font-weight: 700; }
+  .gm-tbl td { font-weight: 500; }
+  .gm-pill { font-weight: 700; letter-spacing: .01em; }
+  .fx-band h2 { font-weight: 700; }
+  .fx-fact .k { font-weight: 800; letter-spacing: .08em; font-size: 11px; color: var(--navy); }
+  .fx-fact .v { font-weight: 700; }
+  .fx-stages .k { font-weight: 800; letter-spacing: .1em; color: var(--navy); }
+  .fx-step .n { font-weight: 700; }
+  .fx-tab { font-weight: 600; }
+  .fx-tab[aria-selected="true"] { font-weight: 800; }
+  .fx-dl dd { font-weight: 700; }
+  .fx-gauge .pct { font-weight: 600; }
+  .gm-btn { font-weight: 700; letter-spacing: .02em; }
+  .gm-filters { border-top: 4px solid var(--navy); }
+  .gm-tile .k { color: var(--navy); font-weight: 600; }
+  .fx-tabs { background: #f4f7fd; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+window.dash = (() => {
+  const DATA_URL = 'data/bd.json';
+  const defaults = { anio: null, gestor: null, head: null, producto: null, estado: null, cliente: null, fila: null };
+  let params = Object.assign({}, defaults);
+  let data = [], status = 'loading', message = '';
+  const fns = [];
+  const run = () => fns.forEach((f) => { try { f(); } catch (e) { console.error(e); } });
+  let t; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(run, 120); });
+
+  // ---- normalización: misma lógica que convert_bd.py ----
+  const KEYS = {
+    'Razón Social': 'razon_social', 'Nombre Comercial': 'cliente', 'Estado General': 'estado', 'Producto': 'producto', 'Servicio': 'servicio',
+    'Head': 'head', 'Gestor': 'gestor', 'Mes de Captación': 'mes_captacion', 'Año': 'anio', 'Tiene RUC': 'tiene_ruc', 'RUC': 'ruc',
+    'Kick-Off': 'kickoff', 'Integración': 'integracion', 'Certificación': 'certificacion', 'Producción': 'produccion', 'Modelo de Negocio': 'modelo',
+    'Observación': 'observacion', 'Mes Inicio': 'mes_inicio', 'Fecha de inicio': 'f_inicio', 'Mes Producción': 'mes_prod', 'Fecha Producción': 'f_prod',
+    'Días Producción': 'dias_prod', 'Semanas': 'semanas_prod', 'Días Transcurridos': 'dias_transc', 'Semanas a Hoy': 'semanas_hoy', 'Alerta Proyecto': 'alerta',
+    'Fecha estimada de salida a Prod': 'f_estimada', 'Alerta Fecha Estimada': 'alerta_fecha', 'Cumplió 5 semanas': 'cumplio_5sem',
+    'Servicio En Producción': 'serv_prod', 'Servicio en Certificación': 'serv_cert', 'Inicio Certificación': 'f_inicio_cert', '¿En Certificación?': 'en_cert',
+    'Etapa Certificación': 'etapa_cert', 'Estado Actual': 'estado_actual', 'Próximo paso': 'proximo_paso', 'Fecha actualización': 'f_actualizacion',
+    'Solicitud Producto': 'sol_producto', 'Rpta Producto': 'rpta_producto', 'Días Producto': 'dias_producto', 'SLA Producto': 'sla_producto',
+    'Solicitud IT': 'sol_it', 'Rpta IT': 'rpta_it', 'Días IT': 'dias_it', 'SLA IT': 'sla_it', 'Fecha de Cert': 'f_cert', 'Informe Op.': 'informe_op',
+    'Días Op.': 'dias_op', 'SLA Operaciones': 'sla_op',
+  };
+  const nk = (s) => String(s || '').replace(/ /g, ' ').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9ñ]/g, '');
+  const KEYS_NORM = {}; Object.keys(KEYS).forEach((k) => { KEYS_NORM[nk(k)] = KEYS[k]; });
+  const DATE_KEYS = new Set(['mes_captacion', 'f_inicio', 'f_prod', 'f_estimada', 'f_inicio_cert', 'f_actualizacion', 'sol_producto', 'rpta_producto', 'sol_it', 'rpta_it', 'f_cert', 'informe_op']);
+  const ESTADOS = { 'stand by': 'Stand By', 'pre producción': 'Pre Producción', 'pre produccion': 'Pre Producción', 'produccion': 'Producción', 'prospeccion': 'Prospección' };
+  const SERVICIOS = { 'gpay': 'GPay', 'gcollect': 'GCollect', 'g collect': 'GCollect', 'g pay': 'GPay', 'gpay / gcollet': 'GPay / GCollect', 'gpay / gcollect': 'GPay / GCollect' };
+  const pad = (n) => String(n).padStart(2, '0');
+  function conv(v) {
+    if (v === null || v === undefined || v === '') return null;
+    if (typeof v === 'string') { const s = v.replace(/ /g, ' ').trim(); return (!s || s.startsWith('#')) ? null : s; }
+    return v;
+  }
+  function toIso(v, key) {
+    if (v === null || !DATE_KEYS.has(key)) return v;
+    if (typeof v === 'number' && v > 20000 && v < 80000) { const d = new Date(Date.UTC(1899, 11, 30) + Math.round(v) * 86400000); return d.toISOString().slice(0, 10); }
+    if (typeof v === 'string') {
+      let m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if (m) return `${m[3]}-${pad(m[2])}-${pad(m[1])}`;
+      m = v.match(/^(\d{4}-\d{2}-\d{2})/); if (m) return m[1];
+    }
+    return v;
+  }
+  function normalize(records) {
+    const out = [];
+    records.forEach((rec) => {
+      const d = {};
+      Object.keys(rec).forEach((h) => { const k = KEYS_NORM[nk(h)]; if (k) d[k] = toIso(conv(rec[h]), k); });
+      if (!d.cliente && !d.razon_social) return;
+      if (!d.cliente) d.cliente = d.razon_social;
+      const e = String(d.estado || '').trim(); d.estado = ESTADOS[e.toLowerCase()] || e;
+      const s = String(d.servicio || '').trim(); d.servicio = SERVICIOS[s.toLowerCase()] || s;
+      const a = parseInt(d.anio, 10); d.anio = Number.isFinite(a) ? a : null;
+      ['kickoff', 'integracion', 'certificacion', 'produccion'].forEach((k) => { d[k] = d[k] ? 1 : 0; });
+      d.avance = d.kickoff + d.integracion + d.certificacion + d.produccion;
+      Object.values(KEYS).forEach((k) => { if (!(k in d)) d[k] = null; });
+      d.id = out.length + 1;
+      out.push(d);
+    });
+    return out;
+  }
+  function fmtStamp(iso) {
+    const d = iso ? new Date(iso) : null;
+    if (!d || isNaN(d)) return 'fecha no disponible';
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  async function load() {
+    let upd = null;
+    try {
+      const res = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const payload = await res.json();
+      upd = document.getElementById('gm-updated');
+      const rows = Array.isArray(payload) ? payload : (payload.datos || payload.rows || payload.data || []);
+      data = normalize(rows);
+      status = 'ok';
+      if (upd) upd.textContent = 'Datos del Excel al ' + fmtStamp(payload.exportadoEn) + ' · ' + data.length + ' filas';
+    } catch (e) {
+      status = 'error'; message = e.message;
+      upd = document.getElementById('gm-updated');
+      if (upd) upd.textContent = 'No se pudo cargar data/bd.json (' + e.message + ')';
+    }
+    run();
+  }
+  load();
+  return {
+    colors: ['var(--c0)', 'var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 'var(--c5)', 'var(--c6)', 'var(--c7)'],
+    data: () => ({ status, data, message, columns: Object.keys(data[0] || {}), meta: [] }),
+    params: () => Object.assign({}, params),
+    setParams: (o) => { Object.assign(params, o); run(); },
+    resetParams: () => { params = Object.assign({}, defaults); run(); },
+    onData: (fn) => { fns.push(fn); fn(); },
+    setLink: () => {},
+    reload: load,
+  };
+})();
+</script>
+<div class="gm-wrap"><div class="gm" id="gm-root">
+  <div class="gm-head" id="inicio">
+    <div>
+      <h1>GMoney | Seguimiento Comercial</h1>
+      <p id="gm-takeaway" class="dash-skeleton" hidden>—</p>
+    </div>
+    <div class="gm-search">
+      <label for="f-cliente">Buscar cliente y abrir su ficha</label>
+      <div class="box">
+        <input id="f-cliente" list="gm-clientes" type="search" placeholder="Escribe el nombre del cliente…" autocomplete="off" aria-label="Buscar cliente">
+        <datalist id="gm-clientes"></datalist>
+        <button type="button" class="gm-btn primary" id="b-ver">Ver ficha</button>
+      </div>
+      <div class="stamp" id="gm-updated">Cargando datos…</div>
+    </div>
+  </div>
+
+  <!-- ===== Ficha de cliente ===== -->
+  <div class="fx" id="ficha" hidden>
+    <div class="fx-top">
+      <div class="fx-band">
+        <div>
+          <div class="fx-title"><h2 id="fx-nombre">—</h2><span class="gm-pill" id="fx-estado">—</span></div>
+          <p class="sub" id="fx-sub">—</p>
+        </div>
+        <div class="fx-actions">
+          <div id="fx-rows"></div>
+          <button type="button" class="gm-btn" id="b-volver">← Volver al tablero</button>
+        </div>
+      </div>
+      <div class="fx-facts" id="fx-facts"></div>
+      <div class="fx-stages">
+        <p class="k">Etapas del proyecto</p>
+        <div class="fx-steps" id="fx-steps"><div class="bar" id="fx-bar"></div></div>
+      </div>
+      <div class="fx-tabs" role="tablist" id="fx-tabs">
+        <button type="button" class="fx-tab" role="tab" data-tab="resumen" aria-selected="true">Resumen</button>
+        <button type="button" class="fx-tab" role="tab" data-tab="dep" aria-selected="false">Dependencias</button>
+        <button type="button" class="fx-tab" role="tab" data-tab="cert" aria-selected="false">Certificación</button>
+        <button type="button" class="fx-tab" role="tab" data-tab="obs" aria-selected="false">Observaciones y próximo paso</button>
+      </div>
+      <div class="fx-panel" id="fx-resumen" role="tabpanel">
+        <div><h4>Detalle del cliente</h4><dl class="fx-dl" id="fx-detalle"></dl></div>
+        <div><h4>Línea de tiempo</h4><ul class="fx-tl" id="fx-tl"></ul></div>
+        <div><h4>Salud del proyecto</h4><div class="fx-gauge" id="fx-gauge"></div></div>
+      </div>
+      <div class="fx-panel" id="fx-dep" role="tabpanel" hidden>
+        <div style="grid-column: 1 / -1"><h4>Dependencias con otras áreas (SLA 3 días hábiles)</h4>
+          <table class="fx-dep"><thead><tr><th>Área</th><th>Solicitud</th><th>Respuesta</th><th>Días</th><th>SLA</th></tr></thead><tbody id="fx-dep-body"></tbody></table>
+        </div>
+      </div>
+      <div class="fx-panel" id="fx-cert" role="tabpanel" hidden>
+        <div><h4>Certificación</h4><dl class="fx-dl" id="fx-cert-dl"></dl></div>
+      </div>
+      <div class="fx-panel" id="fx-obs" role="tabpanel" hidden>
+        <div><h4>Próximo paso</h4><p class="fx-text" id="fx-prox"></p></div>
+        <div><h4>Observación</h4><p class="fx-text" id="fx-obs-txt"></p></div>
+        <div><h4>Modelo de negocio</h4><p class="fx-text" id="fx-modelo"></p></div>
+      </div>
+    </div>
+    <div class="fx-nf gm-card" id="fx-nf" hidden>No se encontró ningún cliente con ese nombre. Prueba con otra palabra o elige uno de la lista.</div>
+  </div>
+
+  <!-- ===== Tablero ===== -->
+  <div class="gm-body" id="gm-dash">
+  <div class="gm-filters" id="filtros">
+    <label>Año de captación <select id="f-anio" aria-label="Año"></select></label>
+    <label>Gestor <select id="f-gestor" aria-label="Gestor"></select></label>
+    <label>Head <select id="f-head" aria-label="Head"></select></label>
+    <label>Producto <select id="f-producto" aria-label="Producto"></select></label>
+    <label>Estado general <select id="f-estado" aria-label="Estado general"></select></label>
+    <button type="button" class="gm-btn" id="f-reset">Limpiar filtros</button>
+    <div class="gm-count" id="gm-count">—</div>
+  </div>
+
+  <div class="gm-tiles" id="kpis">
+    <div class="gm-tile" style="--tc: var(--gm-c3)"><div class="k">Clientes en producción</div><div class="v dash-skeleton">—</div><div class="s">Estado general = Producción</div></div>
+    <div class="gm-tile" style="--tc: var(--gm-c0)"><div class="k">Proyectos en curso</div><div class="v dash-skeleton">—</div><div class="s">Desarrollo + Pre Producción</div></div>
+    <div class="gm-tile" style="--tc: var(--bad)"><div class="k">Exceden 5 semanas</div><div class="v dash-skeleton">—</div><div class="s" id="kpi-exc-s">De los proyectos en curso</div></div>
+    <div class="gm-tile" style="--tc: var(--gm-c1)"><div class="k">En certificación</div><div class="v dash-skeleton">—</div><div class="s" id="kpi-cert-s">Servicios certificándose</div></div>
+    <div class="gm-tile" style="--tc: var(--gm-c2)"><div class="k">Prospección</div><div class="v dash-skeleton">—</div><div class="s">Oportunidades sin kick-off</div></div>
+    <div class="gm-tile" style="--tc: var(--gm-c5)"><div class="k">Días promedio a producción</div><div class="v dash-skeleton">—</div><div class="s" id="kpi-dias-s">Inicio → fecha de producción</div></div>
+  </div>
+
+  <div class="gm-section" id="cartera" style="--sc: var(--gm-c0)">
+    <h2>Cartera y embudo</h2>
+    <div class="gm-grid">
+      <div class="gm-card">
+        <h3>Clientes por estado general</h3>
+        <p class="note">Cada fila de BD es un cliente + servicio. Se muestra el total del filtro actual.</p>
+        <div class="gm-chart h260 dash-skeleton" id="ch-embudo"></div>
+      </div>
+      <div class="gm-card">
+        <h3>Clientes por producto y estado</h3>
+        <p class="note">Barras apiladas por estado general.</p>
+        <div class="gm-legend" id="lg-estado"></div>
+        <div class="gm-chart h260 dash-skeleton" id="ch-producto"></div>
+      </div>
+      <div class="gm-card">
+        <h3>Clientes por servicio</h3>
+        <p class="note">Servicio contratado, apilado por estado general.</p>
+        <div class="gm-chart h260 dash-skeleton" id="ch-servicio"></div>
+      </div>
+      <div class="gm-card">
+        <h3>Captación por año</h3>
+        <p class="note">Clientes registrados por año de captación, apilados por estado actual.</p>
+        <div class="gm-chart h260 dash-skeleton" id="ch-anio"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gm-section" id="evolucion" style="--sc: var(--gm-c3)">
+    <h2>Evolución mensual</h2>
+    <div class="gm-grid">
+      <div class="gm-card">
+        <h3>Salidas a producción por mes</h3>
+        <p class="note">Clientes con Fecha Producción en cada mes.</p>
+        <div class="gm-chart h260 dash-skeleton" id="ch-prodmes"></div>
+      </div>
+      <div class="gm-card">
+        <h3>Inicios vs. salidas a producción</h3>
+        <p class="note">Proyectos iniciados (Fecha de inicio) y puestos en producción, por mes.</p>
+        <div class="gm-legend" id="lg-lineas"></div>
+        <div class="gm-chart h260 dash-skeleton" id="ch-lineas"></div>
+      </div>
+      <div class="gm-card wide">
+        <h3>Acumulado de clientes en producción</h3>
+        <p class="note">Suma acumulada de salidas a producción desde la primera registrada.</p>
+        <div class="gm-chart h220 dash-skeleton" id="ch-acum"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gm-section" id="equipo" style="--sc: var(--gm-c1)">
+    <h2>Equipo comercial</h2>
+    <div class="gm-grid">
+      <div class="gm-card">
+        <h3>Cartera por gestor</h3>
+        <p class="note">Clientes asignados a cada gestor, por estado general.</p>
+        <div class="gm-chart h220 dash-skeleton" id="ch-gestor"></div>
+      </div>
+      <div class="gm-card">
+        <h3>Cartera por head</h3>
+        <p class="note">"Sin Cartera" agrupa los clientes sin head asignado.</p>
+        <div class="gm-chart h260 dash-skeleton" id="ch-head"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gm-section" id="alertas" style="--sc: var(--bad)">
+    <h2>Alertas y dependencias</h2>
+    <div class="gm-grid">
+      <div class="gm-card">
+        <h3>Alerta de plazo en proyectos en curso</h3>
+        <p class="note">Desarrollo y Pre Producción según semanas desde el inicio (meta: 5 semanas).</p>
+        <div class="gm-chart h220 dash-skeleton" id="ch-alerta"></div>
+      </div>
+      <div class="gm-card">
+        <h3>Dependencias por área y SLA</h3>
+        <p class="note">Solicitudes a Producto, IT y Operaciones: respondidas dentro o fuera de 3 días hábiles, o en proceso.</p>
+        <div class="gm-legend" id="lg-sla"></div>
+        <div class="gm-chart h220 dash-skeleton" id="ch-sla"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gm-section" id="proyectos" style="--sc: var(--gm-c4)">
+    <h2>Proyectos en curso</h2>
+    <div class="gm-card">
+      <p class="note">Desarrollo, Pre Producción y clientes en producción con un servicio adicional en certificación. Clic en una columna para ordenar y en una fila para abrir la ficha del cliente.</p>
+      <div class="gm-tools"><input type="search" id="q-curso" placeholder="Buscar cliente, servicio o próximo paso…" aria-label="Buscar en proyectos en curso"></div>
+      <div class="gm-tbl">
+        <table id="t-curso">
+          <thead><tr>
+            <th data-sort="cliente">Cliente</th>
+            <th data-sort="servicio">Servicio</th>
+            <th data-sort="estado">Estado</th>
+            <th data-sort="gestor">Gestor</th>
+            <th data-sort="head">Head</th>
+            <th data-sort="f_inicio">Inicio</th>
+            <th data-sort="semanas_hoy" data-num="1">Semanas</th>
+            <th data-sort="alerta">Alerta</th>
+            <th data-sort="serv_cert">Serv. en cert.</th>
+            <th data-sort="etapa_cert">Etapa certificación</th>
+            <th data-sort="proximo_paso">Próximo paso</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="gm-section" id="produccion" style="--sc: var(--gm-c3)">
+    <h2>Clientes en producción</h2>
+    <div class="gm-card">
+      <p class="note">Clientes operando. Días = Fecha Producción menos Fecha de inicio, según BD. Clic en una fila para abrir la ficha.</p>
+      <div class="gm-tools"><input type="search" id="q-prod" placeholder="Buscar cliente o servicio…" aria-label="Buscar en clientes en producción"></div>
+      <div class="gm-tbl">
+        <table id="t-prod">
+          <thead><tr>
+            <th data-sort="cliente">Cliente</th>
+            <th data-sort="servicio">Servicio</th>
+            <th data-sort="producto">Producto</th>
+            <th data-sort="head">Head</th>
+            <th data-sort="gestor">Gestor</th>
+            <th data-sort="anio" data-num="1">Año</th>
+            <th data-sort="f_prod">Fecha producción</th>
+            <th data-sort="dias_prod" data-num="1">Días</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <p class="gm-def">Fuente: hoja BD de Proyecto_GMoney (una fila por cliente y servicio). Las alertas, etapas de certificación y SLA se toman tal como las calcula el Excel.</p>
+  </div>
+</div>
+
+</div>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const C = dash.colors;
+  const root = $('gm-root');
+  C.forEach((c, i) => root.style.setProperty('--gm-c' + i, c));
+  const ESTADOS = ['Prospección', 'Desarrollo', 'Pre Producción', 'Producción', 'Stand By', 'Cancelado'];
+  const ESTADO_COLOR = { 'Prospección': C[2], 'Desarrollo': C[0], 'Pre Producción': C[1], 'Producción': C[3], 'Stand By': C[4], 'Cancelado': C[5] };
+  const ALERTAS = ['A tiempo', 'Próximo a vencer', 'Excede 5 semanas', 'Sin alerta'];
+  const ALERTA_COLOR = { 'A tiempo': 'var(--ok)', 'Próximo a vencer': 'var(--warn)', 'Excede 5 semanas': 'var(--bad)', 'Sin alerta': 'var(--muted-mark)' };
+  const SLAS = ['≤ 3 días', '> 3 días', 'En proceso'];
+  const SLA_COLOR = { '≤ 3 días': 'var(--ok)', '> 3 días': 'var(--bad)', 'En proceso': 'var(--warn)' };
+  const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  const nf = new Intl.NumberFormat('es-PE');
+  const fmtN = (v) => nf.format(v);
+  const isDate = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}/.test(s);
+  const fmtDate = (s) => isDate(s) ? `${s.slice(8, 10)}/${s.slice(5, 7)}/${s.slice(0, 4)}` : (s || '');
+  const fmtMes = (ym) => `${MESES[+ym.slice(5, 7) - 1]} ${ym.slice(2, 4)}`;
+  const FILTERS = ['anio', 'gestor', 'head', 'producto', 'estado'];
+  const FILTER_LABEL = { anio: 'Todos los años', gestor: 'Todos los gestores', head: 'Todos los heads', producto: 'Todos los productos', estado: 'Todos los estados' };
+  const alertaCls = (a) => a === 'Excede 5 semanas' ? 'bad' : a === 'Próximo a vencer' ? 'warn' : a === 'A tiempo' ? 'ok' : '';
+  const slaCls = (s) => s === '> 3 días' ? 'bad' : s === '≤ 3 días' ? 'ok' : s === 'En proceso' ? 'warn' : '';
+  const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+  // ---------- filtros ----------
+  FILTERS.forEach((n) => { $('f-' + n).addEventListener('change', (e) => dash.setParams({ [n]: e.target.value || null })); });
+  $('f-reset').addEventListener('click', () => dash.resetParams());
+
+  function fillSelects(all) {
+    const p = dash.params();
+    FILTERS.forEach((n) => {
+      const sel = $('f-' + n);
+      let vals = Array.from(new Set(all.map((r) => r[n]).filter((v) => v !== null && v !== undefined && v !== '')));
+      if (n === 'estado') vals = ESTADOS.filter((e) => vals.includes(e)).concat(vals.filter((v) => !ESTADOS.includes(v)));
+      else vals.sort((a, b) => (typeof a === 'number' && typeof b === 'number') ? b - a : String(a).localeCompare(String(b), 'es'));
+      sel.replaceChildren(new Option(FILTER_LABEL[n], ''), ...vals.map((v) => new Option(String(v), String(v))));
+      sel.value = p[n] != null ? String(p[n]) : '';
+    });
+  }
+  function applyFilters(all) {
+    const p = dash.params();
+    return all.filter((r) => FILTERS.every((n) => p[n] == null || p[n] === '' || String(r[n]) === String(p[n])));
+  }
+
+  // ---------- búsqueda de cliente ----------
+  let all = [];
+  const search = $('f-cliente');
+  function findClient(q) {
+    const nq = norm(q); if (!nq) return null;
+    const names = Array.from(new Set(all.map((r) => r.cliente)));
+    return names.find((n) => norm(n) === nq) || names.find((n) => norm(n).startsWith(nq)) || names.find((n) => norm(n).includes(nq)) || null;
+  }
+  function openClient(q) {
+    const name = findClient(q);
+    dash.setParams({ cliente: name || (q ? '?' + q : null), fila: null });
+  }
+  search.addEventListener('change', () => openClient(search.value));
+  search.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); openClient(search.value); } });
+  $('b-ver').addEventListener('click', () => openClient(search.value));
+  $('b-volver').addEventListener('click', () => { dash.setParams({ cliente: null, fila: null }); search.value = ''; });
+  $('fx-tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('.fx-tab'); if (!b) return;
+    document.querySelectorAll('#fx-tabs .fx-tab').forEach((t) => t.setAttribute('aria-selected', String(t === b)));
+    ['resumen', 'dep', 'cert', 'obs'].forEach((k) => { $('fx-' + k).hidden = k !== b.dataset.tab; });
+  });
+  $('fx-rows').addEventListener('click', (e) => { const b = e.target.closest('button[data-id]'); if (b) dash.setParams({ fila: +b.dataset.id }); });
+  ['t-curso', 't-prod'].forEach((id) => $(id).addEventListener('click', (e) => {
+    const tr = e.target.closest('tr[data-key]'); if (!tr) return;
+    const r = all.find((x) => String(x.id) === tr.dataset.key); if (!r) return;
+    search.value = r.cliente;
+    dash.setParams({ cliente: r.cliente, fila: r.id });
+    $('inicio').scrollIntoView({ block: 'start' });
+  }));
+
+  // ---------- helpers de gráfico ----------
+  function clear(el) { el.classList.remove('dash-skeleton'); el.replaceChildren(); }
+  function tooltip(box) {
+    let tip = null;
+    return {
+      show(evt, title, rows) {
+        if (!tip) { tip = document.createElement('div'); tip.className = 'gm-tip'; box.appendChild(tip); }
+        tip.replaceChildren();
+        const t = document.createElement('div'); t.className = 't'; t.textContent = title; tip.appendChild(t);
+        rows.forEach(([name, value, color]) => {
+          const r = document.createElement('div'); r.className = 'r';
+          if (color) { const sw = document.createElement('i'); sw.className = 'gm-sw'; sw.style.background = color; r.appendChild(sw); }
+          const n = document.createElement('span'); n.textContent = name; r.appendChild(n);
+          const b = document.createElement('b'); b.textContent = value; r.appendChild(b);
+          tip.appendChild(r);
+        });
+        const bb = box.getBoundingClientRect();
+        let x = evt.clientX - bb.left + 12, y = evt.clientY - bb.top + 12;
+        const tw = tip.offsetWidth || 160, th = tip.offsetHeight || 40;
+        if (x + tw > bb.width) x = Math.max(0, evt.clientX - bb.left - tw - 12);
+        if (y + th > bb.height) y = Math.max(0, evt.clientY - bb.top - th - 12);
+        tip.style.left = x + 'px'; tip.style.top = y + 'px';
+      },
+      hide() { if (tip) { tip.remove(); tip = null; } },
+    };
+  }
+  function measure(svg, texts) {
+    const g = svg.append('g').attr('visibility', 'hidden');
+    let w = 0;
+    texts.forEach((t) => { const el = g.append('text').text(t); w = Math.max(w, el.node().getComputedTextLength()); });
+    g.remove();
+    return w;
+  }
+  function legend(el, items) {
+    el.replaceChildren(...items.map(([name, color]) => {
+      const s = document.createElement('span');
+      const sw = document.createElement('i'); sw.className = 'gm-sw'; sw.style.background = color;
+      s.appendChild(sw); s.appendChild(document.createTextNode(name));
+      return s;
+    }));
+  }
+  function emptyMsg(el, h, msg) {
+    el.replaceChildren();
+    const d = document.createElement('div'); d.className = 'gm-empty'; d.style.minHeight = h + 'px'; d.textContent = msg; el.appendChild(d);
+  }
+
+  function stackedH(el, groups, keys, colors, opts = {}) {
+    const colorOf = typeof colors === 'function' ? colors : (g, k) => colors[k] || C[0];
+    clear(el);
+    const W = el.clientWidth || 600;
+    if (!groups.length || W < 40) { emptyMsg(el, parseInt(getComputedStyle(el).minHeight) || 200, 'Sin datos para este filtro'); return; }
+    const barH = opts.barH || 22, gap = opts.gap || 10;
+    const H = Math.max(parseInt(getComputedStyle(el).minHeight) || 0, groups.length * (barH + gap) + 30);
+    const svg = d3.select(el).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('width', '100%').attr('height', H);
+    const labW = Math.min(W * 0.4, measure(svg, groups.map((g) => g.label)) + 10);
+    const totals = groups.map((g) => keys.reduce((s, k) => s + (g[k] || 0), 0));
+    const maxV = d3.max(totals) || 1;
+    const valW = measure(svg, [fmtN(maxV)]) + 8;
+    const x = d3.scaleLinear([0, maxV], [labW, W - valW]);
+    const y = d3.scaleBand(groups.map((g) => g.label), [20, H - 10]).paddingInner(gap / (barH + gap));
+    const ticks = x.ticks(Math.min(5, maxV));
+    svg.append('g').attr('class', 'grid').selectAll('line').data(ticks).join('line').attr('x1', (d) => x(d)).attr('x2', (d) => x(d)).attr('y1', 16).attr('y2', H - 10);
+    svg.append('g').selectAll('text').data(ticks).join('text').attr('x', (d) => x(d)).attr('y', 12).attr('text-anchor', 'middle').text((d) => fmtN(d));
+    const tip = tooltip(el);
+    const rowG = svg.append('g').selectAll('g').data(groups).join('g');
+    rowG.append('text').attr('x', labW - 8).attr('y', (g) => y(g.label) + y.bandwidth() / 2).attr('dy', '0.35em').attr('text-anchor', 'end').attr('class', 'val').text((g) => g.label);
+    rowG.each(function (g, i) {
+      let acc = 0;
+      const gsel = d3.select(this);
+      keys.forEach((k) => {
+        const v = g[k] || 0; if (!v) return;
+        const x0 = x(acc), x1 = x(acc + v);
+        gsel.append('rect').attr('x', x0 + (acc ? 1 : 0)).attr('width', Math.max(0, x1 - x0 - (acc ? 1 : 0))).attr('y', y(g.label)).attr('height', y.bandwidth()).attr('rx', 3).attr('fill', colorOf(g, k));
+        acc += v;
+      });
+      gsel.append('text').attr('class', 'val').attr('x', x(acc) + 6).attr('y', y(g.label) + y.bandwidth() / 2).attr('dy', '0.35em').text(fmtN(acc));
+      gsel.append('rect').attr('class', 'hit').attr('x', 0).attr('y', y(g.label) - gap / 2).attr('width', W).attr('height', y.bandwidth() + gap)
+        .on('mousemove', (evt) => tip.show(evt, g.label, keys.filter((k) => g[k]).map((k) => [k, fmtN(g[k]), keys.length > 1 ? colorOf(g, k) : null]).concat(keys.length > 1 ? [['Total', fmtN(totals[i]), null]] : [])))
+        .on('mouseleave', tip.hide);
+    });
+  }
+
+  function monthlyBars(el, series, color) {
+    clear(el);
+    const W = el.clientWidth || 600, H = parseInt(getComputedStyle(el).minHeight) || 260;
+    if (!series.length || W < 40) { emptyMsg(el, H, 'Sin fechas de producción en este filtro'); return; }
+    const svg = d3.select(el).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('width', '100%').attr('height', H);
+    const maxV = d3.max(series, (d) => d.value) || 1;
+    const mL = measure(svg, [fmtN(maxV)]) + 10, mB = 28, mT = 12;
+    const x = d3.scaleBand(series.map((d) => d.month), [mL, W - 6]).paddingInner(0.25);
+    const y = d3.scaleLinear([0, maxV], [H - mB, mT]);
+    const ticks = y.ticks(Math.min(5, maxV));
+    svg.append('g').attr('class', 'grid').selectAll('line').data(ticks).join('line').attr('x1', mL).attr('x2', W - 6).attr('y1', (d) => y(d)).attr('y2', (d) => y(d));
+    svg.append('g').selectAll('text').data(ticks).join('text').attr('x', mL - 6).attr('y', (d) => y(d)).attr('dy', '0.35em').attr('text-anchor', 'end').text((d) => fmtN(d));
+    const every = Math.ceil(series.length / Math.max(2, Math.floor((W - mL) / 52)));
+    svg.append('g').selectAll('text').data(series.filter((d, i) => i % every === 0)).join('text').attr('x', (d) => x(d.month) + x.bandwidth() / 2).attr('y', H - 8).attr('text-anchor', 'middle').text((d) => fmtMes(d.month));
+    const tip = tooltip(el);
+    const g = svg.append('g').selectAll('g').data(series).join('g');
+    g.append('rect').attr('x', (d) => x(d.month)).attr('width', x.bandwidth()).attr('y', (d) => y(d.value)).attr('height', (d) => y(0) - y(d.value)).attr('rx', 3).attr('fill', color);
+    g.append('rect').attr('class', 'hit').attr('x', (d) => x(d.month) - x.step() * 0.125).attr('width', x.step()).attr('y', mT).attr('height', H - mB - mT)
+      .on('mousemove', function (evt, d) { d3.select(this.parentNode).select('rect').attr('fill', 'var(--fg)'); tip.show(evt, fmtMes(d.month), [['Salidas a producción', fmtN(d.value), null]]); })
+      .on('mouseleave', function () { d3.select(this.parentNode).select('rect').attr('fill', color); tip.hide(); });
+  }
+
+  function lines(el, months, seriesList) {
+    clear(el);
+    const W = el.clientWidth || 600, H = parseInt(getComputedStyle(el).minHeight) || 260;
+    if (!months.length || W < 40) { emptyMsg(el, H, 'Sin fechas en este filtro'); return; }
+    const svg = d3.select(el).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('width', '100%').attr('height', H);
+    const maxV = d3.max(seriesList, (s) => d3.max(s.values)) || 1;
+    const mL = measure(svg, [fmtN(maxV)]) + 10, mB = 28, mT = 12, mR = 10;
+    const x = d3.scalePoint(months, [mL, W - mR]);
+    const y = d3.scaleLinear([0, maxV], [H - mB, mT]).nice();
+    const ticks = y.ticks(Math.min(5, maxV));
+    svg.append('g').attr('class', 'grid').selectAll('line').data(ticks).join('line').attr('x1', mL).attr('x2', W - mR).attr('y1', (d) => y(d)).attr('y2', (d) => y(d));
+    svg.append('g').selectAll('text').data(ticks).join('text').attr('x', mL - 6).attr('y', (d) => y(d)).attr('dy', '0.35em').attr('text-anchor', 'end').text((d) => fmtN(d));
+    const every = Math.ceil(months.length / Math.max(2, Math.floor((W - mL) / 52)));
+    svg.append('g').selectAll('text').data(months.filter((m, i) => i % every === 0)).join('text').attr('x', (m) => x(m)).attr('y', H - 8).attr('text-anchor', 'middle').text(fmtMes);
+    const line = d3.line().x((d, i) => x(months[i])).y((d) => y(d));
+    seriesList.forEach((s) => {
+      if (s.area) {
+        const gid = 'gm-grad-' + el.id;
+        const grad = svg.append('defs').append('linearGradient').attr('id', gid).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+        [[0, .26], [.25, .16], [.5, .08], [.75, .03], [1, 0]].forEach(([o, a]) => grad.append('stop').attr('offset', o).attr('style', `stop-color:${s.color};stop-opacity:${a}`));
+        svg.append('path').attr('d', d3.area().x((d, i) => x(months[i])).y0(y(0)).y1((d) => y(d))(s.values)).attr('fill', `url(#${gid})`);
+      }
+      svg.append('path').attr('d', line(s.values)).attr('fill', 'none').attr('stroke', s.color).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+      const last = s.values.length - 1;
+      svg.append('circle').attr('cx', x(months[last])).attr('cy', y(s.values[last])).attr('r', 4).attr('fill', s.color);
+    });
+    const tip = tooltip(el);
+    const rule = svg.append('line').attr('y1', mT).attr('y2', H - mB).attr('stroke', 'var(--ref)').attr('stroke-width', 1).attr('visibility', 'hidden');
+    const dots = svg.append('g');
+    svg.append('rect').attr('class', 'hit').attr('x', mL).attr('y', mT).attr('width', W - mL - mR).attr('height', H - mB - mT)
+      .on('mousemove', (evt) => {
+        const [mx] = d3.pointer(evt);
+        const i = Math.max(0, Math.min(months.length - 1, Math.round((mx - mL) / (x.step() || 1))));
+        rule.attr('x1', x(months[i])).attr('x2', x(months[i])).attr('visibility', 'visible');
+        dots.selectAll('circle').data(seriesList).join('circle').attr('cx', x(months[i])).attr('cy', (s) => y(s.values[i])).attr('r', 4.5).attr('fill', (s) => s.color).attr('stroke', 'var(--panel)').attr('stroke-width', 2);
+        tip.show(evt, fmtMes(months[i]), seriesList.map((s) => [s.name, fmtN(s.values[i]), seriesList.length > 1 ? s.color : null]));
+      })
+      .on('mouseleave', () => { rule.attr('visibility', 'hidden'); dots.selectAll('circle').remove(); tip.hide(); });
+  }
+
+  // ---------- tablas ----------
+  const sortState = { 't-curso': { key: 'semanas_hoy', dir: -1 }, 't-prod': { key: 'f_prod', dir: -1 } };
+  function setupTable(id, inputId) {
+    const table = $(id);
+    table.querySelectorAll('th[data-sort]').forEach((th) => th.addEventListener('click', () => {
+      const s = sortState[id];
+      if (s.key === th.dataset.sort) s.dir = -s.dir; else { s.key = th.dataset.sort; s.dir = th.dataset.num ? -1 : 1; }
+      draw();
+    }));
+    $(inputId).addEventListener('input', () => draw());
+  }
+  function renderTable(id, inputId, rows, cells) {
+    const table = $(id), s = sortState[id];
+    const q = $(inputId).value.trim().toLowerCase();
+    const numCols = new Set(Array.from(table.querySelectorAll('th[data-num]')).map((th) => th.dataset.sort));
+    let list = rows;
+    if (q) list = list.filter((r) => Object.values(r).some((v) => v != null && String(v).toLowerCase().includes(q)));
+    list = list.slice().sort((a, b) => {
+      let va = a[s.key], vb = b[s.key];
+      if (va == null) return 1; if (vb == null) return -1;
+      if (numCols.has(s.key)) return (va - vb) * s.dir;
+      return String(va).localeCompare(String(vb), 'es') * s.dir;
+    });
+    table.querySelectorAll('th[data-sort]').forEach((th) => th.setAttribute('aria-sort', th.dataset.sort === s.key ? (s.dir > 0 ? 'ascending' : 'descending') : 'none'));
+    const tbody = table.querySelector('tbody');
+    tbody.replaceChildren(...list.map((r) => {
+      const tr = document.createElement('tr'); tr.dataset.key = String(r.id);
+      cells(r).forEach(([val, cls, pill]) => {
+        const td = document.createElement('td'); if (cls) td.className = cls;
+        if (pill) { const p = document.createElement('span'); p.className = 'gm-pill ' + pill; p.textContent = val; td.appendChild(p); }
+        else td.textContent = val == null ? '' : String(val);
+        tr.appendChild(td);
+      });
+      return tr;
+    }));
+    if (!list.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = table.querySelectorAll('th').length; td.textContent = 'Sin filas para este filtro'; td.style.color = 'var(--fg-muted)'; tr.appendChild(td); tbody.appendChild(tr); }
+    return list.length;
+  }
+  setupTable('t-curso', 'q-curso');
+  setupTable('t-prod', 'q-prod');
+
+  // ---------- ficha ----------
+  function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function dl(container, pairs) {
+    container.replaceChildren();
+    pairs.forEach(([k, v, cls]) => {
+      container.appendChild(el('dt', '', k));
+      const d = el('dd', cls || '', (v == null || v === '') ? '—' : String(v));
+      if (v == null || v === '') d.style.color = 'var(--fg-muted)';
+      container.appendChild(d);
+    });
+  }
+  function drawFicha(name, filaId) {
+    const ficha = $('ficha');
+    const notFound = !name || name.startsWith('?');
+    $('fx-nf').hidden = !notFound;
+    ficha.querySelector('.fx-top').hidden = notFound;
+    if (notFound) { if (name) $('fx-nf').textContent = `No se encontró ningún cliente para "${name.slice(1)}". Prueba con otra palabra o elige uno de la lista.`; return; }
+    const rows = all.filter((r) => r.cliente === name);
+    if (!rows.length) { $('fx-nf').hidden = false; ficha.querySelector('.fx-top').hidden = true; return; }
+    const r = rows.find((x) => x.id === filaId) || rows[0];
+    ficha.style.setProperty('--ec', ESTADO_COLOR[r.estado] || C[6]);
+    $('fx-nombre').textContent = r.cliente;
+    const pill = $('fx-estado'); pill.textContent = r.estado || '—'; pill.style.setProperty('--pc', ESTADO_COLOR[r.estado] || C[6]);
+    $('fx-sub').textContent = [r.razon_social, r.ruc ? 'RUC ' + r.ruc : null, r.anio ? 'Captado en ' + r.anio : null].filter(Boolean).join(' · ') || 'Sin razón social registrada';
+    const rowsBox = $('fx-rows');
+    rowsBox.replaceChildren(...(rows.length > 1 ? rows.map((x) => { const b = el('button', 'fx-chip', x.servicio || x.producto); b.type = 'button'; b.dataset.id = x.id; b.setAttribute('aria-pressed', String(x.id === r.id)); return b; }) : []));
+    // hechos clave
+    const facts = [
+      ['Producto', r.producto], ['Servicio', r.servicio], ['Head', r.head], ['Gestor', r.gestor],
+      ['Fecha inicio', fmtDate(r.f_inicio) || '—'], ['Fecha producción', fmtDate(r.f_prod) || '—'],
+      ['Alerta', r.alerta || 'Sin alerta', alertaCls(r.alerta)],
+      ['Semanas desde inicio', r.semanas_hoy != null ? fmtN(r.semanas_hoy) : (r.semanas_prod != null ? fmtN(r.semanas_prod) + ' (a producción)' : '—')],
+    ];
+    $('fx-facts').replaceChildren(...facts.map(([k, v, cls]) => { const f = el('div', 'fx-fact'); f.appendChild(el('div', 'k', k)); f.appendChild(el('div', 'v ' + (cls || ''), v || '—')); return f; }));
+    // etapas
+    const stages = [['Kick-off', r.kickoff], ['Integración', r.integracion], ['Certificación', r.certificacion], ['Producción', r.produccion]];
+    const lastDone = stages.reduce((m, s, i) => s[1] ? i : m, -1);
+    const steps = $('fx-steps');
+    Array.from(steps.querySelectorAll('.fx-step')).forEach((n) => n.remove());
+    stages.forEach(([n, done], i) => {
+      const s = el('div', 'fx-step' + (done ? ' done' : (i === lastDone + 1 ? ' now' : '')));
+      s.appendChild(el('div', 'dot', done ? '✓' : String(i + 1)));
+      s.appendChild(el('div', 'n', n));
+      s.appendChild(el('div', 'st', done ? 'Completado' : (i === lastDone + 1 ? 'En curso' : 'Pendiente')));
+      steps.appendChild(s);
+    });
+    $('fx-bar').style.width = lastDone <= 0 ? '0' : `calc(75% * ${lastDone / 3})`;
+    // detalle
+    dl($('fx-detalle'), [
+      ['Razón social', r.razon_social], ['RUC', r.ruc], ['Año de captación', r.anio], ['Fecha de inicio', fmtDate(r.f_inicio)], ['Fecha producción', fmtDate(r.f_prod)],
+      ['Servicio en producción', r.serv_prod], ['Servicio en certificación', r.serv_cert || 'No aplica'], ['Estado actual', r.estado_actual],
+    ]);
+    // línea de tiempo
+    const ev = [
+      [r.f_inicio, 'Inicio del proyecto', C[0]], [r.sol_producto, 'Solicitud a Producto', C[1]], [r.rpta_producto, 'Respuesta de Producto', C[1]],
+      [r.sol_it, 'Solicitud a IT', C[2]], [r.rpta_it, 'Respuesta de IT', C[2]], [r.f_inicio_cert, 'Inicio de certificación' + (r.serv_cert ? ` (${r.serv_cert})` : ''), C[4]],
+      [r.f_cert, 'Certificación terminada', C[4]], [r.informe_op, 'Informe de Operaciones', C[5]], [r.f_prod, 'Pase a producción', C[3]], [r.f_actualizacion, 'Actualización del próximo paso', C[6]],
+    ].filter(([d]) => isDate(d)).sort((a, b) => (a[0] < b[0] ? 1 : -1));
+    const tl = $('fx-tl'); tl.replaceChildren();
+    if (isDate(r.f_estimada) && !r.f_prod) { const li = el('li'); li.appendChild(el('span', 'd', fmtDate(r.f_estimada))); const e = el('span', 'e future', 'Salida a producción estimada' + (r.alerta_fecha ? ` · ${r.alerta_fecha}` : '')); e.style.setProperty('--dc', 'var(--warn)'); li.appendChild(e); tl.appendChild(li); }
+    ev.forEach(([d, t, c]) => { const li = el('li'); li.appendChild(el('span', 'd', fmtDate(d))); const e = el('span', 'e', t); e.style.setProperty('--dc', c); li.appendChild(e); tl.appendChild(li); });
+    if (!tl.children.length) { const li = el('li'); li.appendChild(el('span', 'd', '—')); li.appendChild(el('span', 'e future', 'Sin fechas registradas en BD')); tl.appendChild(li); }
+    // salud
+    const pct = r.avance / 4;
+    const cls = r.estado === 'Producción' && !r.serv_cert ? 'ok' : r.estado === 'Cancelado' ? 'bad' : r.estado === 'Stand By' ? 'warn' : alertaCls(r.alerta) || (r.estado === 'Prospección' ? '' : 'ok');
+    const lbl = r.estado === 'Producción' && !r.serv_cert ? 'Operando en producción' : r.estado === 'Cancelado' ? 'Proyecto cancelado' : r.estado === 'Stand By' ? 'En pausa' : r.alerta ? r.alerta : (r.estado === 'Prospección' ? 'Sin kick-off' : 'Sin alerta de plazo');
+    const gcol = cls === 'bad' ? 'var(--bad)' : cls === 'warn' ? 'var(--warn)' : cls === 'ok' ? 'var(--ok)' : C[0];
+    const g = $('fx-gauge'); g.replaceChildren();
+    const gw = 220, gh = 125, R = 95, ri = 75;
+    const svg = d3.select(g).append('svg').attr('viewBox', `0 0 ${gw} ${gh}`);
+    const arc = d3.arc().innerRadius(ri).outerRadius(R).cornerRadius(10);
+    const grp = svg.append('g').attr('transform', `translate(${gw / 2},${gh - 10})`);
+    grp.append('path').attr('d', arc({ startAngle: -Math.PI / 2, endAngle: Math.PI / 2 })).attr('fill', 'var(--grid)');
+    if (pct > 0) grp.append('path').attr('d', arc({ startAngle: -Math.PI / 2, endAngle: -Math.PI / 2 + Math.PI * pct })).attr('fill', gcol);
+    grp.append('text').attr('class', 'pct').attr('text-anchor', 'middle').attr('y', -6).attr('fill', 'var(--fg)').style('font-family', 'var(--font-serif)').style('font-size', '2rem').text(d3.format('.0%')(pct));
+    g.appendChild(el('div', 'lbl ' + cls, lbl));
+    g.appendChild(el('div', 's', `${r.avance} de 4 etapas completadas` + (r.dias_transc != null ? ` · ${fmtN(r.dias_transc)} días desde el inicio` : '')));
+    // dependencias
+    const deps = [['Producto', r.sol_producto, r.rpta_producto, r.dias_producto, r.sla_producto, C[1]], ['IT', r.sol_it, r.rpta_it, r.dias_it, r.sla_it, C[2]], ['Operaciones', r.f_cert, r.informe_op, r.dias_op, r.sla_op, C[5]]];
+    $('fx-dep-body').replaceChildren(...deps.map(([a, s, rp, d, sla, c]) => {
+      const tr = el('tr');
+      const ta = el('td', 'area', a); ta.style.setProperty('--ac', c); tr.appendChild(ta);
+      tr.appendChild(el('td', '', fmtDate(s) || '—')); tr.appendChild(el('td', '', fmtDate(rp) || '—')); tr.appendChild(el('td', '', d != null ? fmtN(d) : '—'));
+      const ts = el('td'); if (sla) { const p = el('span', 'gm-pill ' + slaCls(sla), sla); ts.appendChild(p); } else ts.textContent = 'Sin solicitud'; tr.appendChild(ts);
+      return tr;
+    }));
+    // certificación y plazos
+    dl($('fx-cert-dl'), [
+      ['Fecha de inicio', fmtDate(r.f_inicio)], ['¿En certificación?', r.en_cert], ['Servicio en certificación', r.serv_cert || 'No aplica'], ['Inicio de certificación', fmtDate(r.f_inicio_cert)], ['Fecha de cert', fmtDate(r.f_cert)],
+      ['Etapa de certificación', r.etapa_cert],
+    ]);
+    // observaciones
+    const setTxt = (id, v, empty) => { const p = $(id); p.textContent = v || empty; p.classList.toggle('muted', !v); };
+    setTxt('fx-prox', r.proximo_paso, 'Sin próximo paso registrado');
+    setTxt('fx-obs-txt', r.observacion, 'Sin observaciones');
+    setTxt('fx-modelo', r.modelo, 'Sin modelo de negocio registrado');
+  }
+
+  // ---------- cálculo y dibujo ----------
+  function monthRange(from, to) {
+    const out = []; let [y, m] = [+from.slice(0, 4), +from.slice(5, 7)];
+    const [ty, tm] = [+to.slice(0, 4), +to.slice(5, 7)];
+    while (y < ty || (y === ty && m <= tm)) { out.push(`${y}-${String(m).padStart(2, '0')}`); m++; if (m > 12) { m = 1; y++; } }
+    return out;
+  }
+  function countBy(rows, key, order) {
+    const c = d3.rollup(rows, (v) => v.length, (r) => r[key] || 'Sin dato');
+    const labels = order ? order.filter((k) => c.has(k)).concat(Array.from(c.keys()).filter((k) => !order.includes(k))) : Array.from(c.keys()).sort((a, b) => c.get(b) - c.get(a));
+    return labels.map((l) => ({ label: l, value: c.get(l) }));
+  }
+  function groupStack(rows, key, stackKey, stackKeys, order) {
+    const groups = d3.rollup(rows, (v) => d3.rollup(v, (w) => w.length, (r) => r[stackKey] || 'Sin dato'), (r) => r[key] || 'Sin dato');
+    let labels = Array.from(groups.keys());
+    if (order) labels = order.filter((k) => groups.has(k)).concat(labels.filter((k) => !order.includes(k)));
+    else labels.sort((a, b) => d3.sum(Array.from(groups.get(b).values())) - d3.sum(Array.from(groups.get(a).values())));
+    return labels.map((l) => { const o = { label: l }; stackKeys.forEach((k) => { o[k] = groups.get(l).get(k) || 0; }); return o; });
+  }
+
+  function draw() {
+    const src = dash.data('bd');
+    const failed = src.status === 'error' || src.status === 'connect' || src.status === 'missing';
+    if (src.status !== 'ok') {
+      if (failed) document.querySelectorAll('#gm-root .gm-chart').forEach((c) => { c.classList.remove('dash-skeleton'); c.replaceChildren(); const d = document.createElement('div'); d.className = 'gm-fail'; d.style.minHeight = (parseInt(getComputedStyle(c).minHeight) || 200) + 'px'; d.textContent = 'No se pudo cargar'; c.appendChild(d); });
+      return;
+    }
+    all = src.data;
+    const p = dash.params();
+    $('gm-clientes').replaceChildren(...Array.from(new Set(all.map((r) => r.cliente))).sort((a, b) => a.localeCompare(b, 'es')).map((n) => new Option(n)));
+
+    // modo ficha
+    const cliente = p.cliente || null;
+    $('ficha').hidden = !cliente;
+    $('gm-dash').hidden = !!cliente;
+    if (cliente) {
+      if (document.activeElement !== search && !cliente.startsWith('?')) search.value = cliente;
+      drawFicha(cliente, p.fila != null ? +p.fila : null);
+      $('gm-takeaway').classList.remove('dash-skeleton');
+      $('gm-takeaway').textContent = 'Ficha del cliente. Usa "Volver al tablero" para ver los indicadores generales.';
+      return;
+    }
+
+    fillSelects(all);
+    const rows = applyFilters(all);
+    const n = rows.length;
+    const anyFilter = FILTERS.some((k) => p[k] != null && p[k] !== '');
+    $('gm-count').textContent = anyFilter ? `${fmtN(n)} de ${fmtN(all.length)} clientes · filtro activo` : `${fmtN(all.length)} clientes en BD`;
+
+    // KPIs
+    const prod = rows.filter((r) => r.estado === 'Producción');
+    const curso = rows.filter((r) => r.estado === 'Desarrollo' || r.estado === 'Pre Producción');
+    const exc = curso.filter((r) => r.alerta === 'Excede 5 semanas');
+    const cert = rows.filter((r) => r.en_cert === 'Sí');
+    const pros = rows.filter((r) => r.estado === 'Prospección');
+    const pairs = rows.filter((r) => r.f_inicio && r.f_prod).map((r) => (new Date(r.f_prod) - new Date(r.f_inicio)) / 86400000).filter((d) => d >= 0);
+    const diasProm = pairs.length ? d3.mean(pairs) : null;
+    const tiles = document.querySelectorAll('#kpis .gm-tile .v');
+    const setV = (i, v) => { tiles[i].classList.remove('dash-skeleton'); tiles[i].textContent = v; };
+    setV(0, fmtN(prod.length)); setV(1, fmtN(curso.length)); setV(2, fmtN(exc.length)); setV(3, fmtN(cert.length)); setV(4, fmtN(pros.length));
+    setV(5, diasProm == null ? '—' : fmtN(Math.round(diasProm)));
+    $('kpi-exc-s').textContent = curso.length ? `${d3.format('.0%')(exc.length / curso.length)} de los proyectos en curso` : 'Sin proyectos en curso';
+    $('kpi-cert-s').textContent = `${fmtN(cert.filter((r) => r.estado === 'Producción').length)} son servicios adicionales de clientes ya en producción`;
+    $('kpi-dias-s').textContent = diasProm == null ? 'Sin pares inicio/producción' : `${fmtN(Math.round(diasProm / 7 * 10) / 10)} semanas · ${fmtN(pairs.length)} casos con ambas fechas`;
+
+    const slaOut = rows.filter((r) => r.sla_producto === '> 3 días').length + rows.filter((r) => r.sla_it === '> 3 días').length + rows.filter((r) => r.sla_op === '> 3 días').length;
+    const tk = $('gm-takeaway'); tk.classList.remove('dash-skeleton');
+    tk.textContent = `${fmtN(prod.length)} clientes en producción y ${fmtN(curso.length)} proyectos en curso, de los cuales ${fmtN(exc.length)} ya exceden las 5 semanas; ${fmtN(slaOut)} dependencias de área respondidas fuera de SLA.`;
+
+    legend($('lg-estado'), ESTADOS.map((e) => [e, ESTADO_COLOR[e]]));
+    legend($('lg-sla'), SLAS.map((s) => [s, SLA_COLOR[s]]));
+    legend($('lg-lineas'), [['Inicios', C[0]], ['Salidas a producción', C[3]]]);
+
+    const embudo = countBy(rows, 'estado', ESTADOS).map((d) => ({ label: d.label, Clientes: d.value }));
+    stackedH($('ch-embudo'), embudo, ['Clientes'], (g) => ESTADO_COLOR[g.label] || C[6], { barH: 24 });
+    stackedH($('ch-producto'), groupStack(rows, 'producto', 'estado', ESTADOS), ESTADOS, ESTADO_COLOR);
+    stackedH($('ch-servicio'), groupStack(rows, 'servicio', 'estado', ESTADOS), ESTADOS, ESTADO_COLOR, { barH: 18, gap: 8 });
+    stackedH($('ch-anio'), groupStack(rows, 'anio', 'estado', ESTADOS, Array.from(new Set(rows.map((r) => r.anio))).filter(Boolean).sort((a, b) => a - b)), ESTADOS, ESTADO_COLOR, { barH: 26 });
+
+    const prodDates = rows.filter((r) => isDate(r.f_prod)).map((r) => r.f_prod.slice(0, 7));
+    const iniDates = rows.filter((r) => isDate(r.f_inicio)).map((r) => r.f_inicio.slice(0, 7));
+    const allDates = prodDates.concat(iniDates).sort();
+    if (allDates.length) {
+      const months = monthRange(allDates[0], allDates[allDates.length - 1]);
+      const cp = d3.rollup(prodDates, (v) => v.length, (d) => d), ci = d3.rollup(iniDates, (v) => v.length, (d) => d);
+      const pm = months.map((m) => ({ month: m, value: cp.get(m) || 0 }));
+      const im = months.map((m) => ci.get(m) || 0);
+      monthlyBars($('ch-prodmes'), pm, C[3]);
+      lines($('ch-lineas'), months, [{ name: 'Inicios', values: im, color: C[0] }, { name: 'Salidas a producción', values: pm.map((d) => d.value), color: C[3] }]);
+      let acc = 0; const cum = pm.map((d) => (acc += d.value));
+      lines($('ch-acum'), months, [{ name: 'Acumulado en producción', values: cum, color: C[3], area: true }]);
+    } else {
+      ['ch-prodmes', 'ch-lineas', 'ch-acum'].forEach((id) => { clear($(id)); emptyMsg($(id), 220, 'Sin fechas en este filtro'); });
+    }
+
+    stackedH($('ch-gestor'), groupStack(rows, 'gestor', 'estado', ESTADOS), ESTADOS, ESTADO_COLOR, { barH: 28 });
+    stackedH($('ch-head'), groupStack(rows, 'head', 'estado', ESTADOS), ESTADOS, ESTADO_COLOR);
+
+    const al = countBy(curso.map((r) => ({ alerta: r.alerta || 'Sin alerta' })), 'alerta', ALERTAS).map((d) => ({ label: d.label, Proyectos: d.value }));
+    stackedH($('ch-alerta'), al, ['Proyectos'], (g) => ALERTA_COLOR[g.label], { barH: 24 });
+    const sla = [['Producto', 'sla_producto'], ['IT', 'sla_it'], ['Operaciones', 'sla_op']].map(([label, k]) => { const o = { label }; SLAS.forEach((s) => { o[s] = rows.filter((r) => r[k] === s).length; }); return o; });
+    stackedH($('ch-sla'), sla, SLAS, SLA_COLOR, { barH: 26 });
+
+    const enCurso = rows.filter((r) => r.estado === 'Desarrollo' || r.estado === 'Pre Producción' || r.en_cert === 'Sí');
+    renderTable('t-curso', 'q-curso', enCurso, (r) => [
+      [r.cliente], [r.servicio], [r.estado], [r.gestor], [r.head],
+      [fmtDate(r.f_inicio), 'num'], [r.semanas_hoy == null ? '' : fmtN(r.semanas_hoy), 'num'],
+      [r.alerta || '', '', alertaCls(r.alerta)], [r.serv_cert || ''], [r.etapa_cert || ''], [r.proximo_paso || '', 'txt'],
+    ]);
+    renderTable('t-prod', 'q-prod', prod, (r) => [
+      [r.cliente], [r.servicio], [r.producto], [r.head], [r.gestor], [r.anio, 'num'], [fmtDate(r.f_prod), 'num'], [r.dias_prod == null ? '' : fmtN(r.dias_prod), 'num'],
+    ]);
+  }
+
+  dash.onData(draw);
+})();
+</script>
+
+</body>
+</html>
